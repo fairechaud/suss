@@ -1,0 +1,17 @@
+[project]
+name = "suss"
+version = "0.1.0"
+description = "CLI tool for cataloguing test cases and test suites"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = []
+
+[project.scripts]
+suss = "suss.cli:main"
+
+[tool.uv]
+package = true
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backed = "setuptools.build_meta"

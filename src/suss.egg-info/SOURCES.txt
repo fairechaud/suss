@@ -1,0 +1,10 @@
+README.md
+pyproject.toml
+src/suss/__init__.py
+src/suss/__main__.py
+src/suss/cli.py
+src/suss.egg-info/PKG-INFO
+src/suss.egg-info/SOURCES.txt
+src/suss.egg-info/dependency_links.txt
+src/suss.egg-info/entry_points.txt
+src/suss.egg-info/top_level.txt
