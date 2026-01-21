@@ -1,90 +1,54 @@
 import argparse
 import sys
 
+from suss.misc import exit_codes
+from suss.commands import init as init_cmd
+from suss.commands import index as index_cmd
+from suss.commands import testcase as tc_cmd
 
-EXIT_OK = 0
-EXIT_USER_ERROR = 1
-EXIT_REPO_ERROR = 2
-EXIT_INTERRUPTED = 130
 
-def common_args() -> list[argparse.ArgumentParser]:
-    return []
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(prog="suss", description="SUSS - test case cataloguing CLI")
+    sub = parser.add_subparsers(dest="cmd")
 
-def menu_options() -> None:
-    print("Welcome to SUSS")
-    print("1) list tests")
-    print("2) Search")
-    print("3) Create tests")
-    print("4) Manage test suites")
+    p_init = sub.add_parser("init", help="Initialise a new SUSS repo")
+    p_init.set_defaults(func=init_cmd.init)
 
-def launch_from_args(args: argparse.Namespace) -> int:
-    if args.cmd == "init":
-        print("suss init: TODO create suss.yaml, directory skeleton")
-        return EXIT_OK
+    p_index = sub.add_parser("index", help="Rebuild the derived index")
+    p_index.set_defaults(func=index_cmd.index)
 
-    if args.cmd == "index":
-        print("suss init: TODO scan specs/testcases, parse front matter, write .suss/index.json")
-        return EXIT_OK
-    
-    if args.cmd == "tc" or args.cmd == "test" or args.cmd == "testcase":
-        print("suss tc: Subcommands are create with optional file path or read/update/delete with options are ID, and list with option tags (category, label, etc))")
+    p_tc = sub.add_parser("tc", aliases=["test", "testcase"], help="Testcase operations")
+    tc_sub = p_tc.add_subparsers(dest="tc_cmd")
 
-    if args.cmd == "search":
-        print("suss search: Advanced grep search for testcases, option is a specific string")
+    p_tc_create = tc_sub.add_parser("create", aliases=["new"], help="Create testcase(s)")
+    p_tc_create.add_argument("input", nargs="?", default=None, help="Omit for editor, '-' for stdin")
+    p_tc_create.add_argument("-g", "--group", default=None, help="Group/folder (e.g. PDM_270)")
+    p_tc_create.set_defaults(func=tc_cmd.create)
 
-    if args.cmd == "suite":
-        print("suss suite: Subcommands are add with option IDs, and export")
-
-    return EXIT_USER_ERROR
-
-def parse_args():
-    common = common_args()
-    parser = argparse.ArgumentParser(
-        prog="suss",
-        description="SUSS - catalog and search test cases specs and patterns",
-        parents=common
-    )
-
-    sub = parser.add_subparsers(dest="cmd", required=False)
-
-    # init
-    init_cmd = sub.add_parser("init", 
-                              help="Initialise a new SUSS repository in the current directory",
-                              parents=common
-                              )
-    # index
-    index_cmd = sub.add_parser("index",
-                               help="Rebuild the derived index",
-                               parents=common
-                               )
-    tc_cmd = sub.add_parser("tc", 
-                            aliases=["test", "testcase"],
-                            help="Rebuild the derived index",
-                            parents=common
-                            )
     return parser
+
 
 def main(argv: list[str] | None = None) -> int:
     if argv is None:
         argv = sys.argv[1:]
 
     if not argv:
-        menu_options()
-        return EXIT_OK
+        # interactive menu later
+        print("Welcome to SUSS")
+        return exit_codes.EXIT_OK
 
-    parser = parse_args()
+    parser = build_parser()
+    args = parser.parse_args(argv)
+
+    if not hasattr(args, "func"):
+        parser.print_help()
+        return exit_codes.EXIT_USER_ERROR
+
     try:
-        args = parser.parse_args(argv)
-        if args.cmd is None:
-            parser.print_help()
-            return EXIT_USER_ERROR
-        return launch_from_args(args)
+        return int(args.func(args))
     except KeyboardInterrupt:
-        print("User stopped execution")
-        return EXIT_INTERRUPTED
-    except Exception as e:
-        print(f"Something went wrong : {e}")
-        return EXIT_USER_ERROR
+        return exit_codes.EXIT_INTERRUPTED
+
 
 if __name__ == "__main__":
     raise SystemExit(main())

@@ -1,3 +1,15 @@
 *.yaml
 .*/
-__pycache__/*
+**/__pycache__
+**/*.pyo
+**/*.pyc
+target
+.venv
+.build
+.dist
+version
+*.egg-info
+**/.idea
+*.py~
+**/outputs/*.json
+.vscode/
