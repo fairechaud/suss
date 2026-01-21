@@ -8,7 +8,7 @@ target
 .build
 .dist
 version
-**/*.egg-info
+*/*.egg*
 **/.idea
 *.py~
 **/outputs/*.json
