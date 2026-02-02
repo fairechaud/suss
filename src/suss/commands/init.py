@@ -3,14 +3,16 @@ from pathlib import Path
 from suss.misc import exit_codes
 from suss.handlers.initialiser import init_repo
 
+from linktoolsapi.logger import LinkLogger
+_log = LinkLogger(__name__)
+
 def init(args) -> int:
     # TODO: args.repo override
-    target = Path.cwd()
     try:
-        root = init_repo(target)
-        print(f"Init'ed SUSS repo at: {root}")
+        root = init_repo(Path(args.repo) if args.repo else Path.cwd())
+        _log.debug(f"Done initialising SUSS repo at: {root}")
         return exit_codes.EXIT_OK
     except ValueError as e:
-        print(str(e))
+        _log.debug(str(e))
         return exit_codes.EXIT_REPO_ERROR
     

@@ -1,18 +1,18 @@
-from pathlib import Path
 
 from suss.misc import exit_codes
-from suss.handlers.repo import require_repo_root, SussPaths
-from suss.handlers.indexer import index_repo
+
+from linktoolsapi.logger import LinkLogger
+_log = LinkLogger(__name__)
 
 def index(args) -> int:
     try:
-        repo_root = require_repo_root(Path.cwd())
+        if args.repo:
+            _log.debug(f"Overriden repo: {args.repo}")
+        else:
+            _log.debug(f"Indexed repo: {args.context.get_repo_root()}")
+        _log.debug(f"Index file: {args.context.get_index_file()}")
+        return exit_codes.EXIT_OK
     except ValueError as e:
-        print(str(e))
+        _log.error(str(e))
         return exit_codes.EXIT_REPO_ERROR
-
-    index_repo(repo_root)
-    print(f"Indexed repo: {repo_root}")
-    print(f"Index file: {SussPaths(repo_root).index_file}")
-    return exit_codes.EXIT_OK
 

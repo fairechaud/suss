@@ -1,8 +1,5 @@
 from dataclasses import dataclass
-from functools import wraps
 from pathlib import Path
-
-from suss.misc import exit_codes
 
 REPO_MARKER = "suss.yaml"   # file that defines a SUSS repo root
 
@@ -14,73 +11,28 @@ SPECS_DIRNAME = "specs"
 TESTCASES_DIRNAME = "testcases"
 SUITES_DIRNAME = "suites"
 
+class SussContext:
+    def __init__(self, repo_root) -> None:
+        self.repo_paths = SussPaths(repo_root)
+        self.repo_paths.ensure_dirs()
 
-def find_repo_root(start: Path) -> Path | None:
-    """
-    Walk upward from `start` looking for a directory containing REPO_MARKER.
-    Returns the repo root path, or None if not found.
-    """
-    current = start.resolve()
-    if current.is_file():
-        current = current.parent
+    def get_repo_root(self) -> Path:
+        return self.repo_paths.repo_root
 
-    for candidate in [current, *current.parents]:
-        if (candidate / REPO_MARKER).is_file():
-            return candidate
+    def get_index_file(self) -> Path:
+        return self.repo_paths.index_file
 
-    return None
+    def get_specs_target_path(self) -> Path:
+        return self.repo_paths.specs_dir
 
+    def get_suites_target_path(self) -> Path:
+        return self.repo_paths.suites_dir
 
-def require_repo_root(start: Path) -> Path:
-    """
-    Like find_repo_root(), but raises if not found.
-    """
-    root = find_repo_root(start)
-    if root is None:
-        raise ValueError(
-            f"Not inside a SUSS repo (missing {REPO_MARKER}). "
-            "Run `suss init` or pass --repo <path>."
-        )
-    return root
+    def get_drafts_target_path(self) -> Path:
+        return self.repo_paths.drafts_dir
 
-
-def ensure_drafts(repo_root: Path) -> Path:
-    """
-    Returns <repo_root>/.suss/drafts and ensures it exists.
-    """
-    drafts = repo_root / STATE_DIRNAME / DRAFTS_DIRNAME
-    drafts.mkdir(parents=True, exist_ok=True)
-    return drafts
-
-def requires_repo_root(handler_function):
-    """
-    Decorator for CLI handlers that require an existing SUSS repo.
-
-    Behavior:
-    - Uses args.repo if present, otherwise uses current working directory.
-    - Walks upward to find suss.yaml.
-    - If not found: prints error and returns EXIT_REPO_ERROR.
-    - If found: runs handler.
-
-    Optionally stashes resolved root on args as args.repo_root.
-    """
-    @wraps(handler_function)
-    def wrapper(args, *other_args, **kwargs) -> int:
-        repo_override = getattr(args, "repo", None)
-        start_path = Path(repo_override) if repo_override else Path.cwd()
-
-        root = find_repo_root(start_path)
-        if root is None:
-            print(f"Error: not inside a SUSS repo (missing {REPO_MARKER}).")
-            print("Hint: run `suss init` or pass --repo <path>.")
-            return exit_codes.EXIT_REPO_ERROR
-
-        # handy for downstream code; avoids re-discovery
-        setattr(args, "repo_root", root)
-
-        return handler_function(args, *other_args, **kwargs)
-
-    return wrapper
+    def get_testcases_target_path(self) -> Path:
+        return self.repo_paths.testcases_dir
 
 @dataclass(frozen=True)
 class SussPaths:
@@ -117,6 +69,7 @@ class SussPaths:
     def suites_dir(self) -> Path:
         return self.specs_dir / SUITES_DIRNAME
 
+
     def ensure_dirs(self) -> None:
         """
         Ensure standard directories exist. Safe to call multiple times.
@@ -126,32 +79,50 @@ class SussPaths:
         self.testcases_dir.mkdir(parents=True, exist_ok=True)
         self.suites_dir.mkdir(parents=True, exist_ok=True)
 
-
-def init_repo(target_dir: Path) -> Path:
+def find_repo_root(start: Path) -> Path | None:
     """
-    Initialize a new SUSS repo at target_dir.
-
-    Creates:
-      - suss.yaml
-      - .suss/
-      - .suss/drafts/
-      - specs/testcases/
-      - specs/suites/
-
-    Returns the repo root.
+    Walk upward from `start` looking for a directory containing REPO_MARKER.
+    Returns the repo root path, or None if not found.
     """
-    repo_root = target_dir.resolve()
-    paths = SussPaths(repo_root)
+    current = start.resolve()
+    if current.is_file():
+        current = current.parent
 
-    repo_root.mkdir(parents=True, exist_ok=True)
+    for candidate in [current, *current.parents]:
+        if (candidate / REPO_MARKER).is_file():
+            return candidate
 
-    if paths.marker_file.exists():
-        raise ValueError(f"SUSS repo already initialized (found {REPO_MARKER} at {paths.marker_file}).")
+    return None
 
-    paths.ensure_dirs()
 
-    # Minimal marker file contents
-    marker_text = "version: 0.1\ntool: suss\n"
-    paths.marker_file.write_text(marker_text, encoding="utf-8")
+def require_repo_root(start: Path) -> Path:
+    """
+    Like find_repo_root(), but raises if not found.
+    """
+    root = find_repo_root(start)
+    if root is None:
+        raise ValueError(
+            f"Not inside a SUSS repo (missing {REPO_MARKER}). "
+                "Run `suss init` or pass --repo <path>."
+        )
+    return root
 
-    return repo_root
+
+def ensure_drafts(repo_root: Path) -> Path:
+    """
+    Returns <repo_root>/.suss/drafts and ensures it exists.
+    """
+    drafts = repo_root / STATE_DIRNAME / DRAFTS_DIRNAME
+    drafts.mkdir(parents=True, exist_ok=True)
+    return drafts
+
+def get_repo_context(args) -> SussContext:
+    """Resolve and validate a repo root, then return a populated SussContext."""
+    if args.repo:
+        repo_root = require_repo_root(Path(args.repo))
+    else:
+        repo_root = require_repo_root(Path.cwd())
+    context = SussContext(repo_root)
+    return context
+    
+    

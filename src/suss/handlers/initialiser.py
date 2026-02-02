@@ -1,7 +1,6 @@
 from pathlib import Path
 
 from suss.handlers.repo import SussPaths
-from suss.misc import exit_codes
 
 def init_repo(repo_root: Path) -> Path:
     repo_root = repo_root.resolve()

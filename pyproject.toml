@@ -1,10 +1,13 @@
 [project]
 name = "suss"
-version = "0.1.0"
+version = "0.2.0"
 description = "CLI tool for cataloguing test cases and test suites"
 readme = "README.md"
 requires-python = ">=3.11"
-dependencies = []
+dependencies = [
+  "rich",
+  "linktoolsapi @ file:///C:/dev/linkalbatrosslibraries/linktoolsapi/"
+  ]
 
 [project.scripts]
 suss = "suss.cli:main"
@@ -15,3 +18,9 @@ package = true
 [build-system]
 requires = ["setuptools>=68"]
 build-backed = "setuptools.build_meta"
+
+[dependency-groups]
+dev = [
+    "ruff>=0.14.14",
+    "pytest>=8.0.0",
+]

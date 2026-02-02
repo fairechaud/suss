@@ -2,13 +2,33 @@ import argparse
 import sys
 
 from suss.misc import exit_codes
+from suss.handlers.repo import get_repo_context
 from suss.commands import init as init_cmd
 from suss.commands import index as index_cmd
 from suss.commands import testcase as tc_cmd
 
+from linktoolsapi.logger import LinkLogger
+from linktoolsapi.logger import LinkLoggerConfiguration, DEBUG
+
+_log = LinkLogger(__name__)
+
+def global_args():
+    p = argparse.ArgumentParser(add_help=False)
+    p.add_argument(
+        "-l", "--logs",
+        action="store_true",
+        default=True,
+        help="Enable logs to stdout"
+    )
+    p.add_argument("-r", "--repo", default=None, help="Override repo root (e.g. C:\\test_repo\\)")
+    return p
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(prog="suss", description="SUSS - test case cataloguing CLI")
+    globals = global_args()
+    parser = argparse.ArgumentParser(prog="suss", 
+                                     description="SUSS - test case cataloguing CLI",
+                                     parents=[globals]
+                                     )
     sub = parser.add_subparsers(dest="cmd")
 
     p_init = sub.add_parser("init", help="Initialise a new SUSS repo")
@@ -27,6 +47,11 @@ def build_parser() -> argparse.ArgumentParser:
 
     return parser
 
+def log_setup(to_console: bool):
+    LOG_CONFIG = LinkLoggerConfiguration()
+    LOG_CONFIG.set_global_log_level(DEBUG)
+    if to_console:
+        LOG_CONFIG.enable_console_handler()
 
 def main(argv: list[str] | None = None) -> int:
     if argv is None:
@@ -34,11 +59,17 @@ def main(argv: list[str] | None = None) -> int:
 
     if not argv:
         # interactive menu later
-        print("Welcome to SUSS")
+        _log.info("Welcome to SUSS")
         return exit_codes.EXIT_OK
 
     parser = build_parser()
     args = parser.parse_args(argv)
+
+    if args.cmd != "init":
+        context = get_repo_context(args)
+        setattr(args, "context", context)
+
+    log_setup(to_console=args.logs)
 
     if not hasattr(args, "func"):
         parser.print_help()
