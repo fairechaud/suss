@@ -1,3 +1,4 @@
+pyright*.json
 *.yaml
 .*/
 **/__pycache__
