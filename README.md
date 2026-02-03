@@ -138,11 +138,11 @@ Notes:
 
 ### Deferred
 
-* `suss tc list` (list + filter)
+* `suss list` (list + filter)
 * `suss tc show`, `suss tc tag add/remove`
 * Markdown import/export (stdin/stdout)
 * Suite creation and management
-* Search
+* Search (future: `--search-mode`, `--match`/verbosity)
 * Execution runs
 * Evidence attachment
 * Statistics and flakiness analysis
@@ -179,7 +179,7 @@ Notes:
 
 ## 11. Roadmap (near-term)
 
-1. Implement `suss tc list` with filters and index-backed output
+1. Implement `suss list` with filters and index-backed output
 2. Implement full `suss index` rebuild (scan repo, validate, de-dupe)
 3. Add suite workflows (`suss suite new/add/remove/show`)
 4. Add `suss tc show` and tag management commands

@@ -20,13 +20,19 @@ def _write_draft(path: Path) -> None:
 
 def test_cli_no_args_returns_ok() -> None:
     code = cli_main([])
-    assert code == exit_codes.EXIT_OK
+    assert code == exit_codes.UserStatus.OK
 
 
 def test_cli_init_creates_marker(tmp_path: Path) -> None:
     repo_root = tmp_path / "repo"
     code = cli_main(["--repo", str(repo_root), "init"])
-    assert code == exit_codes.EXIT_OK
+    assert code == exit_codes.RepoStatus.OK
+    assert (repo_root / "suss.yaml").exists()
+
+def test_cli_init_marker_already_exists() -> None:
+    repo_root = Path("C:\\sandbox")
+    code = cli_main(["--repo", str(repo_root), "init"])
+    assert code == exit_codes.RepoStatus.ALREADY_EXISTS
     assert (repo_root / "suss.yaml").exists()
 
 
@@ -38,7 +44,7 @@ def test_cli_tc_new_with_repo_flag(tmp_path: Path) -> None:
     _write_draft(draft)
 
     code = cli_main(["--repo", str(repo_root), "tc", "new", str(draft), "-g", "PDM_270"])
-    assert code == exit_codes.EXIT_OK
+    assert code == exit_codes.WriteStatus.OK
 
     expected_key = "alpha_beta_123456"
     expected_path = repo_root / "specs" / "testcases" / "PDM_270" / f"{expected_key}.md"
@@ -71,4 +77,4 @@ def test_cli_tc_new_missing_input_returns_io_error(tmp_path: Path) -> None:
 
     missing = repo_root / "missing.md"
     code = cli_main(["--repo", str(repo_root), "tc", "new", str(missing), "-g", "PDM_270"])
-    assert code == exit_codes.EXIT_IO_ERROR
+    assert code == exit_codes.ReadStatus.INVALID_INPUT

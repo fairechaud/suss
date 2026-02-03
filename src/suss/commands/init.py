@@ -1,18 +1,18 @@
 from pathlib import Path
 
-from suss.misc import exit_codes
+from suss.misc.exit_codes import RepoStatus, UserStatus
 from suss.handlers.initialiser import init_repo
 
 from linktoolsapi.logger import LinkLogger
 _log = LinkLogger(__name__)
 
-def init(args) -> int:
+def init(args) -> tuple[int, str]:
     # TODO: args.repo override
     try:
-        root = init_repo(Path(args.repo) if args.repo else Path.cwd())
-        _log.debug(f"Done initialising SUSS repo at: {root}")
-        return exit_codes.EXIT_OK
-    except ValueError as e:
-        _log.debug(str(e))
-        return exit_codes.EXIT_REPO_ERROR
+        code, msg = init_repo(Path(args.repo) if args.repo else Path.cwd())
+        return code, msg
+    except Exception as e:
+        _str = str(e)
+        _log.debug(_str)
+        return RepoStatus.UNEXPECTED, _str
     

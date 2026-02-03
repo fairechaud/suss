@@ -1,5 +1,5 @@
 from pathlib import Path
-from suss.misc import exit_codes
+from suss.misc.exit_codes import ParseStatus, ReadStatus, WriteStatus, IndexStatus
 from suss.handlers.parser import (
     ParserException,
     identify_markdown_style,
@@ -31,7 +31,7 @@ def _build_index_record(tc, group: str, dest_path: Path, fingerprint: str, repo_
   }
 
 # Commands
-def create(args) -> int:
+def create(args) -> tuple[int, str]:
     """
     Wrapper for: suss tc create [input]
 
@@ -45,28 +45,40 @@ def create(args) -> int:
     text_to_write = ""
     testcase = None
     group = getattr(args, "group", None)
+    if group and "," in group:
+        _str = "group must be a single value (no commas). Use tags for multi-group categorization."
+        _log.error(_str)
+        return ReadStatus.INVALID_GROUP, _str
     input_arg = getattr(args, "input", None)
 
-    if input_arg is None:
-        draft_path = build_draft_path(drafts_dir=args.context.get_drafts_target_path(), group=group)
-        text, draft_path = draft_markdown_via_editor(draft_path=draft_path)
-        source = f"editor={draft_path}"
+    try:
+        if input_arg is None:
+            draft_path = build_draft_path(drafts_dir=args.context.get_drafts_target_path(), group=group)
+            text, draft_path = draft_markdown_via_editor(draft_path=draft_path)
+            source = f"editor={draft_path}"
 
-        testcase = parse_markdown_draft_to_testcase(text, source=source)
-        fingerprint = make_fingerprint_of_text(
-            normalise_for_fingerprint(testcase.title) + "|" + normalise_for_fingerprint(testcase.body)
-        )
-        _log.info(f"SUCCESS : captured {len(text)} chars from {source}, group={group!r}")
-    else:
-        input_path = Path(input_arg)
-        if not input_path.exists():
-            _log.error("provided filepath doesn't exist")
-            return exit_codes.EXIT_IO_ERROR
-        testcase, fingerprint = identify_markdown_style(input_path)
+            testcase = parse_markdown_draft_to_testcase(text, source=source)
+            fingerprint = make_fingerprint_of_text(
+                normalise_for_fingerprint(testcase.title) + "|" + normalise_for_fingerprint(testcase.body)
+            )
+            _str = f"SUCCESS : captured {len(text)} chars from {source}, group={group!r}"
+            _log.info(_str)
+        else:
+            input_path = Path(input_arg)
+            if not input_path.exists():
+                _str = "provided filepath doesn't exist"
+                return ReadStatus.INVALID_INPUT, _str
+            testcase, fingerprint = identify_markdown_style(input_path)
 
-    if not testcase:
-        _log.error("testcase doesn't exist/is invalid")
-        return exit_codes.EXIT_DATA_ERROR
+        if not testcase:
+            _str = "testcase doesn't exist/is invalid"
+            _log.error(_str)
+            return ParseStatus.TEST_CREATION_FAILED, _str
+
+    except ParserException as e:
+        _str = str(e)
+        _log.error(_str)
+        return ParseStatus.TEST_CREATION_FAILED, _str
 
     try:
         # Render markdown for file write
@@ -84,8 +96,9 @@ def create(args) -> int:
             dest_dir = dest_dir / group
         filename = testcase.get_key()
         if not filename:
-            _log.error(f"testcase key not found, check args")
-            raise IOError("key for testcase doesn't exist")
+            _str = "testcase key not found, does testcase exist?"
+            _log.error(_str)
+            return ReadStatus.MISSING_DATA, _str
         dest_path = dest_dir / f"{filename}.md"
 
         # Index record + duplicate check
@@ -100,22 +113,20 @@ def create(args) -> int:
         # Store (write file first, then update index)
         index_path = args.context.get_index_file()
         index = load_index(index_path)
-        check_for_duplicates(index, record)
+        result, msg = check_for_duplicates(index, record)
+        if not result:
+            _str = msg
+            return IndexStatus.DUPLICATE_FOUND, _str
         write_text(text=text_to_write, path=dest_path)
         index["testcases"].append(record)
         save_index(index_path, index)
-        _log.info(f"SUCCESS : checkout {dest_path}")
+        _str = f"SUCCESS : checkout {dest_path}"
+        return WriteStatus.OK, _str
 
-    except ParserException as e:
-        _log.error(str(e))
-        return exit_codes.EXIT_DATA_ERROR
+    except OSError as e:
+        _str = str(e)
+        _log.error(_str)
+        return WriteStatus.WRITE_OPERATION_FAILED, _str
 
-    except ValueError as e:
-        _log.error(str(e))
-        return exit_codes.EXIT_REPO_ERROR
 
-    except Exception as e:
-        _log.error(e)
-        return exit_codes.EXIT_IO_ERROR
 
-    return exit_codes.EXIT_OK
