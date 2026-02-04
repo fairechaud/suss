@@ -12,12 +12,14 @@ def load_index(index_path: Path) -> dict:
     if not index_path.exists():
         return {
             "meta": {"version": "0.2", "generated_at": _now_iso()},
+            "_missing": True,
             "testcases": []
         }
     return read_json(index_path)
 
 def save_index(index_path: Path, index: dict) -> None:
-    """Persist the index JSON and stamp a new generated_at timestamp."""
+    index = dict(index)  # shallow copy
+    index.pop("_missing", None)
     index["meta"]["generated_at"] = _now_iso()
     write_json(index_path, index)
 

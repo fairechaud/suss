@@ -9,6 +9,8 @@ class ReadStatus(IntEnum):
     INVALID_GROUP = 5
     INVALID_SEARCH = 6
     INVALID_INPUT = 7
+    INVALID_QUERY = 8
+    INVALID_OUTPUT = 9
     LEGACY_UNSUPPORTED = 98
     UNEXPECTED = 99
 

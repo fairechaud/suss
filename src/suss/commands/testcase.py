@@ -17,7 +17,7 @@ from linktoolsapi.logger import LinkLogger
 _log = LinkLogger(__name__)
 
 # Helpers
-def _build_index_record(tc, group: str, dest_path: Path, fingerprint: str, repo_root: Path) -> dict:
+def _build_index_record(tc, group: str | None, dest_path: Path, fingerprint: str, repo_root: Path) -> dict:
   return {
       "id": tc.tc_id,
       "key": tc.key,
@@ -104,7 +104,7 @@ def create(args) -> tuple[int, str]:
         # Index record + duplicate check
         record = _build_index_record(
             tc=testcase,
-            group=group,
+            group=group or None,
             dest_path=dest_path,
             fingerprint=fingerprint,
             repo_root=args.context.get_repo_root()
@@ -120,7 +120,7 @@ def create(args) -> tuple[int, str]:
         write_text(text=text_to_write, path=dest_path)
         index["testcases"].append(record)
         save_index(index_path, index)
-        _str = f"SUCCESS : checkout {dest_path}"
+        _str = f"test created at {dest_path}"
         return WriteStatus.OK, _str
 
     except OSError as e:

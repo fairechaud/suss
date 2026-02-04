@@ -38,13 +38,15 @@ def build_parser() -> argparse.ArgumentParser:
     p_index = sub.add_parser("index", help="Rebuild the derived index")
     p_index.set_defaults(func=index_cmd.index)
 
-    p_list = sub.add_parser("list", aliases=["ls"], help="List specific testcases based on criteria")
+    p_list = sub.add_parser("list", aliases=["ls"], help="List specific testcases based on criteria.")
     p_list.add_argument("-g", "--group", default=None, help="CSV groups to match lazily e.g. -g PDM_270, PDM_271 matches PDM_270 OR PDM_271 testcases.")
     p_list.add_argument("-i","--id", default=None, help="CSV IDs to match lazily e.g. -i aaa111, bbb222 matches aaa111 OR bbb222 testcases.")
-    p_list.add_argument("-t", "--tag", default=None, help="CSV tags to match, can be modified to lazy/greedy match through --tag-mode.")
+    p_list.add_argument("-t", "--tags", default=None, help="CSV tags to match, can be modified to lazy/greedy match through --tag-mode.")
     p_list.add_argument("--tag-mode", choices=["any", "all"], default="any", help="Tag match mode (any|all). Default is any for a lazy search.")
-    p_list.add_argument("-s","--search", default=None, help="Search for matching substrings in testcase body (e.g. firmware update)")
+    p_list.add_argument("-s","--search", default=None, help="Search for matching substrings in testcase body (e.g. firmware update).")
     p_list.add_argument("--search-mode", choices=["any", "all"], default="any", help="Substring search mode (any|all). Default is any for a lazy search.")
+    p_list.add_argument("-m","--query-mode", choices=["any", "all"], default="any", help="Defines the match mode across criteria (any|all). Default is any for matching group OR id OR tags OR search, all matches group AND id AND tags AND search.")
+    p_list.add_argument("-so","--stdout", choices=["quiet","short", "verbose"], default="quiet", help="Display mode for list results (quiet|short|verbose). Default is quiet.")
     p_list.set_defaults(func=list_cmd.ls)
 
     p_tc = sub.add_parser("tc", aliases=["test", "testcase"], help="Testcase operations")
