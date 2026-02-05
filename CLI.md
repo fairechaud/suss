@@ -1,11 +1,11 @@
-# suss CLI – Command Cheatsheet & Implementation Blueprint
+# suss CLI Command Cheatsheet & Implementation Blueprint
 
 This document enumerates **all intended MVP commands**, their purpose, inputs, outputs, and implementation notes.
 
 All commands:
 - Use `argparse`
 - Support `-h / --help`
-- Exit non‑zero on error
+- Exit non-zero on error
 - Are safe to script (stdin/stdout, no hidden prompts unless interactive mode)
 
 ---
@@ -16,7 +16,7 @@ All commands:
 python suss.py [subcommand] [options]
 ```
 
-If no subcommand is provided → **interactive mode**.
+If no subcommand is provided -> **interactive mode**.
 
 ---
 
@@ -74,15 +74,15 @@ Errors:
 ### `suss tc new`
 
 ```
-suss tc new [-g GROUP] [-i ID] -t TITLE
+suss tc new [INPUT] [-g GROUP]
 ```
 
 Creates a new test case file.
 
 Behavior:
-- Generate ID if not provided
-- Populate front matter template
-- Open `$EDITOR` unless `--no-edit`
+- If INPUT is omitted, open `$EDITOR` for drafting
+- If INPUT is a filepath, import that Markdown as a testcase
+- Generate ID/key if not provided
 
 ---
 
@@ -96,15 +96,22 @@ Outputs raw Markdown to stdout.
 
 ---
 
-### `suss tc list`
+## List
+
+### `suss list`
 
 ```
-suss tc list [-g GROUP] [-t TAG] [--search TEXT]
+suss list [-g GROUPS] [-i IDS] [-t TAGS] [--tag-mode any|all] [-s SEARCH] [--search-mode any|all] [--stdout quiet|short|verbose|json] [--limit N]
 ```
 
 Lists test cases using index.
 
-Output:
+Notes:
+- CSV values are accepted for groups/ids/tags
+- Case-insensitive matching by default
+- Exact/case-sensitive matching is planned but not yet implemented
+
+Output (short):
 - ID | Title | Tags | Group
 
 ---
@@ -130,41 +137,6 @@ suss tc tag remove <TC_ID> <TAG...>
 ```
 
 Removes tags if present.
-
----
-
-## Markdown Interchange
-
-### `suss tc import`
-
-```
-suss tc import [-g GROUP] [--on-collision error|fork]
-```
-
-Reads Markdown from stdin and creates test cases.
-
-Behavior:
-- Split input into blocks
-- Parse front matter or infer
-- Assign IDs if missing
-- Write files
-
-Collision modes:
-- `error`: abort
-- `fork`: generate new ID + add `derived_from`
-
----
-
-### `suss tc export`
-
-```
-suss tc export <TC_ID...>
-```
-
-Writes one or more test cases to stdout.
-
-Formatting:
-- Each test case separated by a deterministic delimiter
 
 ---
 
@@ -220,31 +192,16 @@ Lists all suites.
 
 ---
 
-## Search
-
-### `suss search`
-
-```
-suss search <QUERY>
-```
-
-Searches across:
-- title
-- body text
-- tags
-
-Implementation options:
-- JSON index scan (MVP)
-- Optional `ripgrep` fast path
-
----
-
 ## Exit Codes
 
-- `0` success
-- `1` user error (invalid args, missing ID)
-- `2` repo/config error
-- `130` interrupted (Ctrl+C)
+SUSS uses grouped status enums rather than a single numeric table. Each command returns a status code plus a message.
+
+- `UserStatus`: CLI-level outcomes (OK, unexpected, interrupted)
+- `ReadStatus`: invalid input/criteria parsing (group/tag/search/output)
+- `ParseStatus`: markdown parsing/testcase creation failures
+- `WriteStatus`: write/path failures
+- `IndexStatus`: index load/duplicate/missing cases
+- `ListStatus`: list outcomes (OK/NO_MATCH)
 
 ---
 

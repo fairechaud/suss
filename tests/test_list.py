@@ -1,5 +1,6 @@
 from pathlib import Path
 from argparse import Namespace
+import json
 from suss.commands.ls import ls as list_cmd
 from suss.handlers.repo import SussContext
 from suss.handlers.indexer import load_index, save_index
@@ -104,6 +105,8 @@ def test_list_returns_error_when_index_is_empty(tmp_path: Path):
                      search="some_pattern", 
                      search_mode="any",
                      query_mode="any",
+                     stdout="quiet",
+                     limit=5,
                      context=context)
     code, msg = list_cmd(args)
     assert code == exit_codes.IndexStatus.MISSING_INDEX
@@ -119,6 +122,8 @@ def test_list_returns_error_when_index_is_missing(tmp_path: Path):
                      search="some_pattern", 
                      search_mode="any",
                      query_mode="any",
+                     stdout="quiet",
+                     limit=5,
                      context=context)
     code, msg = list_cmd(args)
     assert code == exit_codes.IndexStatus.MISSING_INDEX
@@ -133,11 +138,13 @@ def test_list_returns_invalid_status_on_incorrect_tag_mode(tmp_path: Path):
                      search="some_pattern", 
                      search_mode="any",
                      query_mode="any",
+                     stdout="quiet",
+                     limit=5,
                      context=context)
     code, _ = list_cmd(args)
     assert code == exit_codes.ReadStatus.INVALID_TAG
 
-def test_list_returns_invalid_status_on_incorrect_search_mode(tmp_path):
+def test_list_returns_invalid_status_on_incorrect_search_mode(tmp_path: Path):
     context = _populate_index(tmp_path)
     args = Namespace(group="some_group", 
                      id="some_ID", 
@@ -146,11 +153,13 @@ def test_list_returns_invalid_status_on_incorrect_search_mode(tmp_path):
                      search="some_pattern", 
                      search_mode="other",
                      query_mode="any",
+                     stdout="quiet",
+                     limit=5,
                      context=context)
     code, _ = list_cmd(args)
     assert code == exit_codes.ReadStatus.INVALID_SEARCH
 
-def test_list_returns_invalid_status_on_incorrect_stdout_mode(tmp_path):
+def test_list_returns_invalid_status_on_incorrect_stdout_mode(tmp_path: Path):
     context = _populate_index(tmp_path)
     args = Namespace(group="sample group", 
                      id="some_ID", 
@@ -159,12 +168,13 @@ def test_list_returns_invalid_status_on_incorrect_stdout_mode(tmp_path):
                      search="some_pattern", 
                      search_mode="any",
                      query_mode="any",
+                     limit=5,
                      stdout="other",
                      context=context)
     code, _ = list_cmd(args)
     assert code == exit_codes.ReadStatus.INVALID_OUTPUT
 
-def test_list_shows_no_matches_for_criteria(tmp_path):
+def test_list_shows_no_matches_for_criteria(tmp_path: Path):
     context = _populate_index(tmp_path)
     args = Namespace(group="GROUP_NOT_FOUND",
                      id=None,
@@ -173,12 +183,14 @@ def test_list_shows_no_matches_for_criteria(tmp_path):
                      search=None,
                      search_mode=None,
                      query_mode="any",
+                     stdout="quiet",
+                     limit=5,
                      context=context
                      )
     code, _ = list_cmd(args)
     assert code == exit_codes.ListStatus.NO_MATCH
 
-def test_list_returns_match_any_results_group_and_id(tmp_path):
+def test_list_returns_match_any_results_group_and_id(tmp_path: Path, capsys):
     context = _populate_index(tmp_path)
     args = Namespace(group="sample group",
                      id="999999",
@@ -186,15 +198,16 @@ def test_list_returns_match_any_results_group_and_id(tmp_path):
                      tag_mode=None,
                      search=None,
                      search_mode=None,
-                     stdout="quiet",
+                     stdout="json",
                      query_mode="any",
+                     limit=5,
                      context=context
                      )
-    code, msg = list_cmd(args)
-    assert code == exit_codes.ListStatus.OK
-    assert "2" in msg
+    list_cmd(args)
+    out = capsys.readouterr().out
+    assert len(json.loads(out)) == 2
 
-def test_list_returns_group_and_id_intersection(tmp_path):
+def test_list_returns_group_and_id_intersection(tmp_path: Path, capsys):
     context = _populate_index(tmp_path)
     args = Namespace(group="sample group",
                      id="TCID",
@@ -202,15 +215,16 @@ def test_list_returns_group_and_id_intersection(tmp_path):
                      tag_mode=None,
                      search=None,
                      search_mode=None,
-                     stdout="quiet",
+                     stdout="json",
                      query_mode="all",
+                     limit=5,
                      context=context
                      )
-    code, msg = list_cmd(args)
-    assert code == exit_codes.ListStatus.OK
-    assert "1" in msg
+    list_cmd(args)
+    out = capsys.readouterr().out
+    assert len(json.loads(out)) == 1
 
-def test_list_returns_group_and_id_union(tmp_path):
+def test_list_returns_group_and_id_union(tmp_path: Path, capsys):
     context = _populate_index(tmp_path)
     args = Namespace(group="sample group",
                      id="999999",
@@ -218,31 +232,33 @@ def test_list_returns_group_and_id_union(tmp_path):
                      tag_mode=None,
                      search=None,
                      search_mode=None,
-                     stdout="quiet",
+                     stdout="json",
                      query_mode="any",
+                     limit=5,
                      context=context
                      )
-    code, msg = list_cmd(args)
-    assert code == exit_codes.ListStatus.OK
-    assert "2" in msg
+    list_cmd(args)
+    out = capsys.readouterr().out
+    assert len(json.loads(out)) == 2
 
-def test_list_returns_group_intersection_with_tags(tmp_path):
+def test_list_returns_group_intersection_with_tags(tmp_path: Path, capsys):
     context = _populate_index(tmp_path)
     args = Namespace(group="GROUP1",
-                 id=None,
-                 tags="TAG1, TAG2",
-                 tag_mode="all",
-                 search=None,
-                 search_mode=None,
-                 stdout="quiet",
-                 query_mode="any",
-                 context=context
-                 )
-    code, msg = list_cmd(args)
-    assert code == exit_codes.ListStatus.OK
-    assert "3" in msg
+                     id=None,
+                     tags="TAG1, TAG2",
+                     tag_mode="all",
+                     search=None,
+                     search_mode=None,
+                     stdout="json",
+                     query_mode="any",
+                     limit=5,
+                     context=context
+                     )
+    list_cmd(args)
+    out = capsys.readouterr().out
+    assert len(json.loads(out)) == 3
 
-def test_list_returns_match_any_results_tags(tmp_path):
+def test_list_returns_match_any_results_tags(tmp_path: Path, capsys):
     context = _populate_index(tmp_path)
     args = Namespace(group=None,
                      id=None,
@@ -250,15 +266,16 @@ def test_list_returns_match_any_results_tags(tmp_path):
                      tag_mode="any",
                      search=None,
                      search_mode=None,
-                     stdout="quiet",
+                     stdout="json",
                      query_mode="any",
+                     limit=5,
                      context=context
                      )
-    code, msg = list_cmd(args)
-    assert code == exit_codes.ListStatus.OK
-    assert "3" in msg
+    list_cmd(args)
+    out = capsys.readouterr().out
+    assert len(json.loads(out)) == 3
 
-def test_list_returns_match_any_results_tags_and_group(tmp_path):
+def test_list_returns_match_any_results_tags_and_group(tmp_path: Path, capsys):
     context = _populate_index(tmp_path)
     args = Namespace(group="sample group",
                      id=None,
@@ -266,15 +283,16 @@ def test_list_returns_match_any_results_tags_and_group(tmp_path):
                      tag_mode="any",
                      search=None,
                      search_mode=None,
-                     stdout="quiet",
+                     stdout="json",
+                     limit=5,
                      query_mode="any",
                      context=context
                      )
-    code, msg = list_cmd(args)
-    assert code == exit_codes.ListStatus.OK
-    assert "4" in msg
+    list_cmd(args)
+    out = capsys.readouterr().out
+    assert len(json.loads(out)) == 4
 
-def test_list_returns_match_all_results_tags(tmp_path):
+def test_list_returns_match_all_results_tags(tmp_path: Path, capsys):
     context = _populate_index(tmp_path)
     args = Namespace(group=None,
                      id=None,
@@ -282,13 +300,14 @@ def test_list_returns_match_all_results_tags(tmp_path):
                      tag_mode="all",
                      search=None,
                      search_mode=None,
-                     stdout="quiet",
+                     stdout="json",
+                     limit=5,
                      query_mode="any",
                      context=context
                      )
-    code, msg = list_cmd(args)
-    assert code == exit_codes.ListStatus.OK
-    assert "1" in msg
+    list_cmd(args)
+    out = capsys.readouterr().out
+    assert len(json.loads(out)) == 1
 
 def test_list_returns_no_match_for_empty_criteria(tmp_path: Path):
     context = _populate_index(tmp_path)
@@ -299,6 +318,7 @@ def test_list_returns_no_match_for_empty_criteria(tmp_path: Path):
                      search=None,
                      search_mode=None,
                      stdout=None,
+                     limit=5,
                      query_mode="any",
                      context=context)
     code, _ = list_cmd(args)

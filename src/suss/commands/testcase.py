@@ -5,7 +5,7 @@ from suss.handlers.parser import (
     identify_markdown_style,
     make_fingerprint_of_text,
     normalise_for_fingerprint,
-    parse_markdown_draft_to_testcase,
+    parse_markdown_to_testcase,
     render_testcase_as_inline_string,
     render_testcase_to_text,
 )
@@ -57,7 +57,7 @@ def create(args) -> tuple[int, str]:
             text, draft_path = draft_markdown_via_editor(draft_path=draft_path)
             source = f"editor={draft_path}"
 
-            testcase = parse_markdown_draft_to_testcase(text, source=source)
+            testcase = parse_markdown_to_testcase(text, source=source)
             fingerprint = make_fingerprint_of_text(
                 normalise_for_fingerprint(testcase.title) + "|" + normalise_for_fingerprint(testcase.body)
             )

@@ -46,7 +46,8 @@ def build_parser() -> argparse.ArgumentParser:
     p_list.add_argument("-s","--search", default=None, help="Search for matching substrings in testcase body (e.g. firmware update).")
     p_list.add_argument("--search-mode", choices=["any", "all"], default="any", help="Substring search mode (any|all). Default is any for a lazy search.")
     p_list.add_argument("-m","--query-mode", choices=["any", "all"], default="any", help="Defines the match mode across criteria (any|all). Default is any for matching group OR id OR tags OR search, all matches group AND id AND tags AND search.")
-    p_list.add_argument("-so","--stdout", choices=["quiet","short", "verbose"], default="quiet", help="Display mode for list results (quiet|short|verbose). Default is quiet.")
+    p_list.add_argument("--stdout", choices=["quiet","short", "verbose", "json"], default="quiet", help="Display mode for list results (quiet|short|verbose|json). Default is quiet for no stdout.")
+    p_list.add_argument("--limit", type=int, default=5, help="Customise size of head (prints [LIMIT] top results). Default is 5")
     p_list.set_defaults(func=list_cmd.ls)
 
     p_tc = sub.add_parser("tc", aliases=["test", "testcase"], help="Testcase operations")

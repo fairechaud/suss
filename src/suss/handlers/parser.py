@@ -124,7 +124,7 @@ def _normalise_title(title: str, source: str) -> str:
     return t
 
 # Public API
-def parse_markdown_draft_to_testcase(markdown: str, source: str = "") -> TestCase:
+def parse_markdown_to_testcase(markdown: str, source: str = "") -> TestCase:
     """
     Parses a testcase from markdown.
 
@@ -155,8 +155,10 @@ def parse_markdown_draft_to_testcase(markdown: str, source: str = "") -> TestCas
 
     created = str(meta.get("created", "") or "").strip() or now_iso_utc()
     updated = str(meta.get("updated", "") or "").strip() or created
-
-    key = derive_testcase_key(title,tc_id)
+    
+    key = meta.get("key", None)
+    if not key:
+        key = derive_testcase_key(title,tc_id)
 
     return TestCase(
         key=key,
@@ -224,7 +226,7 @@ def make_testcase_from_markdown_legacy(markdown: str) -> tuple[TestCase, str]:
     raise ParserException("Legacy markdown without front matter is not supported.")
 
 def make_testcase_from_markdown_draft(markdown: str) -> tuple[TestCase, str]:
-    tc = parse_markdown_draft_to_testcase(markdown)
+    tc = parse_markdown_to_testcase(markdown)
     fingerprint = make_fingerprint_of_text(
         normalise_for_fingerprint(tc.title) + "|" + normalise_for_fingerprint(tc.body)
     )

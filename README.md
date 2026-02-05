@@ -125,24 +125,31 @@ python suss.py [subcommand] [options]
 
 ## 7. MVP Feature Set
 
-### Current state (v0.2 snapshot)
+### Current state (v0.3 snapshot)
 
 * Repo initialization
 * Test case creation from editor or from an existing draft file
 * Derived index updates on new test cases (duplicate id/fingerprint checks)
 * Basic parser/validation for front matter
+* `suss list` (top-level list/filter command)
+  * CSV criteria for group/id/tags
+  * Tag matching modes: `any` or `all`
+  * Global query mode: `any` or `all`
+  * Output modes: `quiet`, `short`, `verbose`, `json`
+  * `--limit` (default head-style output)
 
 Notes:
 * Legacy markdown without front matter is not supported.
 * `suss index` exists, but only `suss tc new` currently updates the index; full rebuild scanning is still in progress.
+* Filtering defaults to case-insensitive matching. Exact/case-sensitive matching is planned but not yet implemented.
 
 ### Deferred
 
-* `suss list` (list + filter)
 * `suss tc show`, `suss tc tag add/remove`
 * Markdown import/export (stdin/stdout)
 * Suite creation and management
-* Search (future: `--search-mode`, `--match`/verbosity)
+* Search (future: `--search-mode`, `--match`/verbosity and exact/case-sensitive criteria)
+* Version bump script / unified versioning automation
 * Execution runs
 * Evidence attachment
 * Statistics and flakiness analysis
@@ -162,8 +169,8 @@ Notes:
 
 ## 9. Upgrade Path
 
-* JSON index → SQLite index (transparent)
-* Filesystem backend → DB backend
+* JSON index -> SQLite index (transparent)
+* Filesystem backend -> DB backend
 * CLI UX remains stable across upgrades
 
 ---
@@ -179,10 +186,10 @@ Notes:
 
 ## 11. Roadmap (near-term)
 
-1. Implement `suss list` with filters and index-backed output
-2. Implement full `suss index` rebuild (scan repo, validate, de-dupe)
-3. Add suite workflows (`suss suite new/add/remove/show`)
-4. Add `suss tc show` and tag management commands
+1. Implement full `suss index` rebuild (scan repo, validate, de-dupe)
+2. Add suite workflows (`suss suite new/add/remove/show`)
+3. Add `suss tc show` and tag management commands
+4. Add search with match/verbosity modes
 5. Web-based client for browsing and authoring test cases (optional)
 
 ---
